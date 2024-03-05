@@ -1,0 +1,21 @@
+name: MikanAni
+version: 1.0.0
+author: evell
+type: parser
+description: MikanAni Provider
+language: python
+logo: https://raw.githubusercontent.com/evell1992/kubespider_plugin/main/mikanani/logo.png
+arguments:
+  - name: pattern
+    type: text
+    description: pattern
+    placeholder: pattern
+    required: false
+    default:
+  - name: auto_download
+    type: bool
+    description: auto download
+    placeholder: auto download config
+    required: false
+    default: false
+binary: https://raw.githubusercontent.com/evell1992/kubespider_plugin/main/mikanani/bin/provider
