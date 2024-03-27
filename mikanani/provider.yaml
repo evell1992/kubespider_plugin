@@ -6,14 +6,14 @@ description: MikanAni Provider
 language: python
 logo: https://raw.githubusercontent.com/evell1992/kubespider_plugin/main/mikanani/logo.png
 arguments:
-  - name: pattern
+  pattern:
     type: text
     description: pattern
     placeholder: pattern
     required: false
     default:
-  - name: auto_download
-    type: bool
+  auto_download:
+    type: boolean
     description: auto download
     placeholder: auto download config
     required: false
