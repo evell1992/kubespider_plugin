@@ -1,7 +1,7 @@
 name: M-Team
 version: 1.0.0
 author: evell
-type: search
+type: scheduler
 description: M-Team Private Tracker Provider
 language: python
 logo: https://raw.githubusercontent.com/evell1992/kubespider_plugin/main/mt/logo.png
