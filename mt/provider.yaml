@@ -11,16 +11,49 @@ arguments:
     description: M-Team parser configration
     required: false
     default:
+    properties:
   search:
     type: object
     description: M-Team search configration
     required: false
     default:
+    properties:
+      mode:
+        type: text
+        description: 搜索类型,通用:normal 电影:movie 电视:tvshow 成人:adult
+        required: true
+        default: ""
   scheduler:
     type: object
     description: M-Team scheduler configration
     required: false
     default:
+    properties:
+      base_info:
+        type: boolean
+        description: 推送用户基础信息
+        required: false
+        default: true
+      auto_seeding:
+        type: boolean
+        description: 允许自动做种
+        required: false
+        default: true
+      mail_read:
+        type: boolean
+        description: 读取邮件信息推送
+        required: false
+        default: true
+      allow_delete_seed:
+        type: boolean
+        description: 允许删除做种
+        required: false
+        default: true
+      max_seeding:
+        type: integer
+        description: 最大做种数
+        required: false
+        default: 20
   host:
     type: text
     description: M-Team`s host
@@ -31,4 +64,9 @@ arguments:
     description: M-Team`s cookie
     required: true
     default:
+  use_proxy:
+    type: boolean
+    description: weather use proxy, if proxy configration
+    required: false
+    default: false
 binary: https://raw.githubusercontent.com/evell1992/kubespider_plugin/main/mt/bin/provider
