@@ -1,16 +1,16 @@
-import json
 import logging
 import re
 import time
 from urllib.parse import urljoin, urlparse
-from kubespider_source_provider_sdk import SDK, SchedulerProvider, Resource, LinkType, FileType
-from kubespider_source_provider_sdk.utils import get_request_controller
+from kubespider_plugin import SDK, SchedulerProvider, Resource, LinkType, FileType
+from kubespider_plugin.utils import get_request_controller
+from kubespider_plugin.values import KubespiderContext
 
 
 class MTeam:
     def __init__(self, host: str, cookie: str, proxy="", use_proxy=False):
         self.host = host
-        self.request_handler = get_request_controller(cookie=cookie, use_proxy=use_proxy)
+        self.request_handler = get_request_controller(proxy_addr=proxy, cookie=cookie, use_proxy=use_proxy)
 
     def get_torrent_dl_token(self, torrent_id):
         """获取种子token"""
@@ -44,7 +44,13 @@ class MTeam:
             dl_token = self.get_torrent_dl_token(torrent_id)
             torrent_url = self.get_torrent_link(dl_token)
             if torrent_url:
-                return [Resource(url=torrent_url, link_type=LinkType.torrent, file_type=FileType.general, **data).data]
+                result = [Resource(
+                    url=torrent_url,
+                    link_type=LinkType.torrent,
+                    file_type=FileType.general,
+                    **data
+                ).data]
+                return result
         return []
 
     def search(self, keyword, page=1, **kwargs):
@@ -71,7 +77,11 @@ class MTeam:
             "page": page,
             "page_size": 100,
             "next_page": next_page,
-            "data": [Resource(**item).data for item in data]
+            "data": [Resource(
+                url=urljoin(self.host, f"/detail/{item.get('id')}"),
+                link_type=LinkType.general,
+                **item
+            ).data for item in data]
         }
 
     def scheduler(self):
@@ -82,7 +92,7 @@ class MTeam:
 class MTeamProvider(SchedulerProvider):
     @staticmethod
     # pylint: disable=unused-argument
-    def should_handle(source: str, **kwargs):
+    def should_handle(source: str, context: KubespiderContext, **kwargs):
         host_list = [
             "https://kp.m-team.cc",
             "https://ap.m-team.cc",
@@ -103,7 +113,7 @@ class MTeamProvider(SchedulerProvider):
 
     @staticmethod
     # pylint: disable=unused-argument
-    def get_links(source: str, **kwargs):
+    def get_links(source: str, context: KubespiderContext, **kwargs):
         host = kwargs.get("host")
         cookie = kwargs.get("cookie")
         proxy = kwargs.get("proxy")
@@ -114,18 +124,17 @@ class MTeamProvider(SchedulerProvider):
         return mt.parse(source)
 
     @staticmethod
-    def search(keyword: str, page=1, **kwargs):
+    def search(keyword: str, page: int, context: KubespiderContext, **kwargs):
         host = kwargs.get("host")
         cookie = kwargs.get("cookie")
-        proxy = kwargs.get("proxy")
         use_proxy = kwargs.get("use_proxy")
         if not all([host, cookie]):
             raise ValueError("host and cookie cannot be empty")
-        mt = MTeam(host, cookie, proxy, use_proxy)
+        mt = MTeam(host, cookie, context.proxy, use_proxy)
         return mt.search(keyword, page)
 
     @staticmethod
-    def scheduler(**kwargs):
+    def scheduler(context: KubespiderContext, **kwargs):
         host = kwargs.get("host")
         cookie = kwargs.get("cookie")
         proxy = kwargs.get("proxy")
