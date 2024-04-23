@@ -29,24 +29,19 @@ arguments:
     required: false
     default:
     properties:
-      base_info:
+      push_info:
         type: boolean
-        description: 推送用户基础信息
+        description: 推送基础信息
         required: false
         default: true
-      auto_seeding:
+      allow_seeding:
         type: boolean
-        description: 允许自动做种
-        required: false
-        default: true
-      mail_read:
-        type: boolean
-        description: 读取邮件信息推送
+        description: 允许做种
         required: false
         default: true
       allow_delete_seed:
         type: boolean
-        description: 允许删除做种
+        description: 允许删种
         required: false
         default: true
       max_seeding:
@@ -54,6 +49,11 @@ arguments:
         description: 最大做种数
         required: false
         default: 20
+      max_torrent_size:
+        type: integer
+        description: 种子最大size,单位GB,默认不限制
+        required: false
+        default: 0
   host:
     type: text
     description: M-Team`s host

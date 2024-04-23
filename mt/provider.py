@@ -1,10 +1,24 @@
 import logging
+import math
 import re
 import time
+from datetime import datetime
 from urllib.parse import urljoin, urlparse
 from kubespider_plugin import SDK, SchedulerProvider, Resource, LinkType, FileType
 from kubespider_plugin.utils import get_request_controller
 from kubespider_plugin.values import KubespiderContext
+
+
+def size_translate(size: int, unit: str) -> tuple[float, str]:
+    units = ["B", "KB", "MB", "GB", "TB", "PB", "EB"]
+    if unit not in units:
+        raise ValueError(f"Unit must be one of {units}")
+    index = units.index(unit)
+    exponent = int(math.log(size, 1024))
+    allow_exponent = exponent if (index + exponent) < len(units) - 1 else len(units) - index - 1
+    if exponent > 0:
+        return round(size / (1024 ** allow_exponent), 2), units[index + allow_exponent]
+    return size, unit
 
 
 class MTeam:
@@ -33,7 +47,7 @@ class MTeam:
     def parse(self, source):
         match = re.findall(r'/detail/(\d*)', source)
         torrent_id = match[0] if match else None
-        resp = self.request_handler.post(urljoin(self.host, "https://kp.m-team.cc/api/torrent/detail"),
+        resp = self.request_handler.post(urljoin(self.host, "/api/torrent/detail"),
                                          data={'id': torrent_id})
         status_code, content = resp.status_code, resp.json()
         data = content.get("data", {})
@@ -84,8 +98,72 @@ class MTeam:
             ).data for item in data]
         }
 
-    def scheduler(self):
-        pass
+    def scheduler(self, **kwargs):
+        if kwargs.get("push_info"):
+            message = self.get_news() + self.get_new_mails()
+            message.append(self.get_profile())
+
+    def get_new_mails(self):
+        resp = self.request_handler.post(urljoin(self.host, "/api/msg/notify/statistic")).json()
+        unread_count = int(resp.get("data", {}).get("unMake", 0))
+        unread_message = []
+        if unread_count:
+            post_datas = [
+                {"keyword": "", "box": 1, "pageNumber": 1, "pageSize": 100},  # 收件箱
+                {"keyword": "", "box": -2, "pageNumber": 1, "pageSize": 100},  # 系统信息
+            ]
+            for data in post_datas:
+                resp = self.request_handler.post(urljoin(self.host, "/api/msg/search"), data=data).json()
+                for message in resp.get("data", {}).get("data", []):
+                    unread = message.get("unread")
+                    if unread:
+                        msg_id = message.get("id")
+                        title = message.get("title")
+                        context = message.get("context")
+                        modify_date = message.get("lastModifiedDate")  # 2024-04-17 23:19:45
+                        # read message
+                        self.request_handler.post(urljoin(self.host, "/api/msg/markRead"), data={"msgIds": msg_id}).json()
+                        unread_message.append({"title": title, "date": modify_date, "context": context})
+        return unread_message
+
+    def get_news(self):
+        resp = self.request_handler.post(urljoin(self.host, "/api/news/list")).json()
+        news_list = []
+        for news in resp.get("data", []):
+            title = news.get("subject")
+            context = news.get("context")
+            modify_date = news.get("lastModifiedDate")
+            modify_date_time = datetime.strptime(modify_date, '%Y-%m-%d %H:%M:%S')
+            if modify_date_time.date() == datetime.now().date():
+                news_list.append({"title": title, "date": modify_date, "context": context})
+        return news_list
+
+    def get_profile(self):
+        resp = self.request_handler.post(urljoin(self.host, "/api/member/profile")).json()
+        share_rate = resp.get("data", {}).get("memberCount", {}).get("shareRate")
+        bonus = resp.get("data", {}).get("memberCount", {}).get("bonus")
+        upload = size_translate(int(resp.get("data", {}).get("memberCount", {}).get("uploaded", 0)), "B")
+        download = size_translate(int(resp.get("data", {}).get("memberCount", {}).get("downloaded", 0)), "B")
+        resp = self.request_handler.post(urljoin(self.host, "/api/tracker/myPeerStatus")).json()
+        leach = resp.get("data", {}).get("leecher")
+        seed = resp.get("data", {}).get("seeder")
+        return {
+            "leach": leach,
+            "seed": seed,
+            "share_rate": share_rate,
+            "bonus": bonus,
+            "upload": f"{upload[0]} {upload[1]}",
+            "download": f"{download[0]} {download[1]}",
+        }
+
+    def get_seeding_info(self):
+        post_data = {
+            "pageNumber": 1,
+            "pageSize": 100,
+            "type": "INCOMPLETE",  # LEECHING INCOMPLETE SEEDING COMPLETED
+            "userid": "",
+        }
+        resp = self.request_handler.post(urljoin(self.host, "/api/member/getUserTorrentList")).json()
 
 
 @SDK()
@@ -142,4 +220,4 @@ class MTeamProvider(SchedulerProvider):
         if not all([host, cookie]):
             raise ValueError("host and cookie cannot be empty")
         mt = MTeam(host, cookie, proxy, use_proxy)
-        return mt.scheduler()
+        return mt.scheduler(**kwargs)
