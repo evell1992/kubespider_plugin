@@ -4,12 +4,14 @@ import re
 import time
 from datetime import datetime
 from urllib.parse import urljoin, urlparse
+
+import requests
 from kubespider_plugin import SDK, SchedulerProvider, Resource, LinkType, FileType
 from kubespider_plugin.utils import get_request_controller
 from kubespider_plugin.values import KubespiderContext
 
 
-def size_translate(size: int, unit: str) -> tuple[float, str]:
+def convert_bigger_size(size: int, unit: str) -> tuple[float, str]:
     units = ["B", "KB", "MB", "GB", "TB", "PB", "EB"]
     if unit not in units:
         raise ValueError(f"Unit must be one of {units}")
@@ -22,9 +24,13 @@ def size_translate(size: int, unit: str) -> tuple[float, str]:
 
 
 class MTeam:
-    def __init__(self, host: str, cookie: str, proxy="", use_proxy=False):
+    def __init__(self, host: str, token: str, proxy="", use_proxy=False):
         self.host = host
-        self.request_handler = get_request_controller(proxy_addr=proxy, cookie=cookie, use_proxy=use_proxy)
+        self.headers = {
+            "Authorization": token,
+        }
+        self.request_handler = requests.session()
+        self.request_handler.headers = self.headers
 
     def get_torrent_dl_token(self, torrent_id):
         """获取种子token"""
@@ -102,6 +108,17 @@ class MTeam:
         if kwargs.get("push_info"):
             message = self.get_news() + self.get_new_mails()
             message.append(self.get_profile())
+        if kwargs.get("allow_seeding"):
+            resp = self.request_handler.post(urljoin(self.host, "/api/tracker/myPeerStatus")).json()
+            seeding_count = int(resp.get("data", {}).get("leecher", 0)) + int(resp.get("data", {}).get("seeder", 0))
+            # 替换
+            if kwargs.get("max_seeding") >= seeding_count:
+                # 允许替换
+                if kwargs.get("allow_delete_seed"):
+                    pass
+            # 新增
+            else:
+                pass
 
     def get_new_mails(self):
         resp = self.request_handler.post(urljoin(self.host, "/api/msg/notify/statistic")).json()
@@ -122,7 +139,8 @@ class MTeam:
                         context = message.get("context")
                         modify_date = message.get("lastModifiedDate")  # 2024-04-17 23:19:45
                         # read message
-                        self.request_handler.post(urljoin(self.host, "/api/msg/markRead"), data={"msgIds": msg_id}).json()
+                        self.request_handler.post(urljoin(self.host, "/api/msg/markRead"),
+                                                  data={"msgIds": msg_id}).json()
                         unread_message.append({"title": title, "date": modify_date, "context": context})
         return unread_message
 
@@ -142,8 +160,8 @@ class MTeam:
         resp = self.request_handler.post(urljoin(self.host, "/api/member/profile")).json()
         share_rate = resp.get("data", {}).get("memberCount", {}).get("shareRate")
         bonus = resp.get("data", {}).get("memberCount", {}).get("bonus")
-        upload = size_translate(int(resp.get("data", {}).get("memberCount", {}).get("uploaded", 0)), "B")
-        download = size_translate(int(resp.get("data", {}).get("memberCount", {}).get("downloaded", 0)), "B")
+        upload = convert_bigger_size(int(resp.get("data", {}).get("memberCount", {}).get("uploaded", 0)), "B")
+        download = convert_bigger_size(int(resp.get("data", {}).get("memberCount", {}).get("downloaded", 0)), "B")
         resp = self.request_handler.post(urljoin(self.host, "/api/tracker/myPeerStatus")).json()
         leach = resp.get("data", {}).get("leecher")
         seed = resp.get("data", {}).get("seeder")
@@ -193,31 +211,31 @@ class MTeamProvider(SchedulerProvider):
     # pylint: disable=unused-argument
     def get_links(source: str, context: KubespiderContext, **kwargs):
         host = kwargs.get("host")
-        cookie = kwargs.get("cookie")
+        token = kwargs.get("token")
         proxy = kwargs.get("proxy")
         use_proxy = kwargs.get("use_proxy")
-        if not all([host, cookie]):
-            raise ValueError("host and cookie cannot be empty")
-        mt = MTeam(host, cookie, proxy, use_proxy)
+        if not all([host, token]):
+            raise ValueError("host and token cannot be empty")
+        mt = MTeam(host, token, proxy, use_proxy)
         return mt.parse(source)
 
     @staticmethod
     def search(keyword: str, page: int, context: KubespiderContext, **kwargs):
         host = kwargs.get("host")
-        cookie = kwargs.get("cookie")
+        token = kwargs.get("token")
         use_proxy = kwargs.get("use_proxy")
-        if not all([host, cookie]):
+        if not all([host, token]):
             raise ValueError("host and cookie cannot be empty")
-        mt = MTeam(host, cookie, context.proxy, use_proxy)
+        mt = MTeam(host, token, context.proxy, use_proxy)
         return mt.search(keyword, page)
 
     @staticmethod
     def scheduler(context: KubespiderContext, **kwargs):
         host = kwargs.get("host")
-        cookie = kwargs.get("cookie")
+        token = kwargs.get("token")
         proxy = kwargs.get("proxy")
         use_proxy = kwargs.get("use_proxy")
-        if not all([host, cookie]):
+        if not all([host, token]):
             raise ValueError("host and cookie cannot be empty")
-        mt = MTeam(host, cookie, proxy, use_proxy)
+        mt = MTeam(host, token, proxy, use_proxy)
         return mt.scheduler(**kwargs)

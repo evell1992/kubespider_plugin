@@ -59,9 +59,9 @@ arguments:
     description: M-Team`s host
     required: true
     default:
-  cookie:
+  token:
     type: text
-    description: M-Team`s cookie
+    description: M-Team`s token
     required: true
     default:
   use_proxy:
