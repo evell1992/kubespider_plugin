@@ -1,0 +1,4 @@
+kubespider-source-provider-sdk==0.1.0
+requests==2.31.0
+lxml==5.2.1
+urllib3==2.2.1

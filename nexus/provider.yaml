@@ -1,0 +1,50 @@
+name: Nexus
+version: 1.0.0
+author: evell
+type: scheduler
+description: Nexus
+language: python
+logo: https://raw.githubusercontent.com/evell1992/kubespider_plugin/main/nexus/logo.png
+arguments:
+  parser:
+    type: object
+    description: Nexus parser configration
+    required: false
+    default:
+    properties:
+  search:
+    type: object
+    description: Nexus search configration
+    required: false
+    default:
+    properties:
+  scheduler:
+    type: object
+    description: Nexus scheduler configration
+    required: false
+    default:
+    properties:
+  websites:
+    type: array
+    description: Nexus`s website Configuration
+    required: true
+    default:
+    items:
+      type: object
+      properties:
+        host:
+          type: text
+          description: website`s host
+          required: true
+          default:
+        cookie:
+          type: text
+          description: website`s cookie
+          required: true
+          default:
+  use_proxy:
+    type: boolean
+    description: weather use proxy, if proxy configration
+    required: false
+    default: false
+binary: https://raw.githubusercontent.com/evell1992/kubespider_plugin/main/nexus/bin/provider
