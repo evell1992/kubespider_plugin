@@ -24,24 +24,16 @@ arguments:
     required: false
     default:
     properties:
-  websites:
-    type: array
-    description: Nexus`s website Configuration
+  host:
+    type: text
+    description: Nexus website`s host
     required: true
     default:
-    items:
-      type: object
-      properties:
-        host:
-          type: text
-          description: website`s host
-          required: true
-          default:
-        cookie:
-          type: text
-          description: website`s cookie
-          required: true
-          default:
+  cookie:
+    type: text
+    description: Nexus website`s cookie
+    required: true
+    default:
   use_proxy:
     type: boolean
     description: weather use proxy, if proxy configration
