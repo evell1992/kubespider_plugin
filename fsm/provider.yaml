@@ -1,0 +1,52 @@
+name: FSM
+version: 1.0.0
+author: evell
+type: pt
+description: FSM Provider
+language: python
+logo: https://raw.githubusercontent.com/evell1992/kubespider_plugin/main/fsm/logo.png
+arguments:
+  cookie:
+    type: text
+    description: user cookie
+    required: true
+    default:
+  parser:
+    source:
+      type: text
+      description: source url
+      required: true
+      default:
+  search:
+    type: object
+    description: search configuration options
+    required: false
+    default:
+    properties:
+      tags:
+        type: array
+        description: tags
+        required: false
+        default:
+        items:
+          type: text
+          description: tag
+          required: false
+          default:
+  seeding:
+    type: object
+    description: Seeding configuration options
+    required: false
+    default:
+    properties:
+      max_count:
+        type: integer
+        description: max seeding count
+        required: true
+        default: ""
+      auto_replace:
+        type: boolean
+        description: auto replace torrents
+        required: false
+        default: true
+binary: https://raw.githubusercontent.com/evell1992/kubespider_plugin/main/fsm/bin/provider

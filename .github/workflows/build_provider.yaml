@@ -4,13 +4,17 @@ on:
   push:
     branches:
       - main
-
+permissions:
+  contents: write
 jobs:
   build:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ ubuntu-latest, macos-latest, windows-latest ]
+        #        os: [ ubuntu-latest, macos-latest, windows-latest ]
+        os:
+          - ubuntu-latest
+          - macos-latest
         include:
           - os: macos-latest
             arch: x86_64
@@ -29,6 +33,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
+          pip install pyinstaller
           pip install sdk/kubespider-plugin-0.1.0.tar.gz
           pip install -r ./mt/requirements.txt
           pip install -r ./nexus/requirements.txt
@@ -53,23 +58,23 @@ jobs:
       - name: Download build artifacts (Ubuntu)
         uses: actions/download-artifact@v2
         with:
-          name: ubuntu-latest-x86_64-build
+          name: ubuntu-latest--build
           path: ./dist/
-      - name: Download build artifacts (macOS Intel)
-        uses: actions/download-artifact@v2
-        with:
-          name: macos-latest-x86_64-build
-          path: ./dist/
-      - name: Download build artifacts (macOS ARM)
-        uses: actions/download-artifact@v2
-        with:
-          name: macos-latest-arm64-build
-          path: ./dist/
-      - name: Download build artifacts (Windows)
-        uses: actions/download-artifact@v2
-        with:
-          name: windows-latest-x86_64-build
-          path: ./dist/
+      #      - name: Download build artifacts (macOS Intel)
+      #        uses: actions/download-artifact@v2
+      #        with:
+      #          name: macos-latest-x86_64-build
+      #          path: ./dist/
+      #      - name: Download build artifacts (macOS ARM)
+      #        uses: actions/download-artifact@v2
+      #        with:
+      #          name: macos-latest-arm64-build
+      #          path: ./dist/
+      #      - name: Download build artifacts (Windows)
+      #        uses: actions/download-artifact@v2
+      #        with:
+      #          name: windows-latest-x86_64-build
+      #          path: ./dist/
 
       - name: Create Release
         id: create_release
@@ -77,31 +82,31 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: 0.1
+          tag_name: 0.1.1
           release_name: Release 0.1
           draft: false
           prerelease: false
 
-#      - name: Upload Release Assets (Ubuntu)
-#        uses: actions/upload-release-asset@v1
-#        with:
-#          upload_url: ${{ steps.create_release.outputs.upload_url }}
-#          asset_path: ./dist/ubuntu-latest-x86_64/*.whl
-#          asset_name: ubuntu-latest-x86_64.whl
-#          asset_content_type: application/octet-stream
-      - name: Upload Release Assets (macOS Intel)
+      - name: Upload Release Assets (Ubuntu)
         uses: actions/upload-release-asset@v1
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./mt/bin/provider
-          asset_name: macos-latest-x86_64_mt
+          asset_name: provider
           asset_content_type: application/octet-stream
+#      - name: Upload Release Assets (macOS Intel)
+#        uses: actions/upload-release-asset@v1
+#        with:
+#          upload_url: ${{ steps.create_release.outputs.upload_url }}
+#          asset_path: ./mt/bin/provider
+#          asset_name: provider
+#          asset_content_type: application/octet-stream
 #      - name: Upload Release Assets (macOS ARM)
 #        uses: actions/upload-release-asset@v1
 #        with:
 #          upload_url: ${{ steps.create_release.outputs.upload_url }}
-#          asset_path: ./dist/macos-latest-arm64/*.whl
-#          asset_name: macos-latest-arm64.whl
+#          asset_path: ./mt/bin/provider
+#          asset_name: provider
 #          asset_content_type: application/octet-stream
 #      - name: Upload Release Assets (Windows)
 #        uses: actions/upload-release-asset@v1
