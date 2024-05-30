@@ -1,0 +1,21 @@
+name: MagnetDog
+version: 1.0.0
+author: evell
+type: search
+description: MagnetDog Provider
+language: python
+logo: https://raw.githubusercontent.com/evell1992/kubespider_plugin/main/magnet_dog/logo.png
+arguments:
+  parser:
+    type: object
+    description: MagnetDog parser configration
+    required: false
+    default:
+    properties:
+  search:
+    type: object
+    description: MagnetDog search configration
+    required: false
+    default:
+    properties:
+binary: https://raw.githubusercontent.com/evell1992/kubespider_plugin/main/magnet_dog/bin/provider
